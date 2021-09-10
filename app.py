@@ -63,12 +63,18 @@ api.add_resource(UserRegister, '/cadastro')
 api.add_resource(UserLogin, '/login')
 api.add_resource(UserLogout, '/logout')
 
+#-- para heroku
+import os
+# ----- 
+
 if __name__ == '__main__':
     # restringe a fazer a uninica chamada e iniciaizaxao aqui, so vai ser execudado pelo app.py
     # evita importacoes de todos arquivos, so precisa importar daqui do arquivo principal
     from sql_alchemy import banco
     banco.init_app(app)
-    #
-    app.run(debug=True, host='0.0.0.0')
+    
+    port = int(os.environ.get("PORT", 5000))
+    #app.run(debug=True, host='0.0.0.0')
+    app.run(threaded=True, host='0.0.0.0', port=port) #threaded - muitas sessoes ao mesmo tempo
 
 #post : precisamos receber todos os dados via json
