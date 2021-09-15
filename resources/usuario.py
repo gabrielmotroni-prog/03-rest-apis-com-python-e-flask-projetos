@@ -73,7 +73,7 @@ class UserLogin(Resource):
         # se usuario for encontrado manda token gerado com base na id_usuario
         #JWT: bibliotca que vamos usar para fazer autenticao de usuario (login e logout)
         #pip install flask-jwt-extended
-        if user and safe_str_cmp(user.senha, dados ['senha']):
+        if user and safe_str_cmp(user.senha, dados ['senha']): #(compara senha do usuario no encontrado no bd com a senha do argumento passado )
             token_de_acesso = create_access_token(identity=user.user_id)
             return {'access_token': token_de_acesso},200
         return {'message': 'The username or password is incorrect.'}, 401 #Unathorize

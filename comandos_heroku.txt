@@ -1,0 +1,11 @@
+#-----------
+# para o erro:  at=error code=H14 desc="No web processes running"
+#-----------
+1)heroku buildpacks:clear
+2)heroku ps:scale web=1
+
+#-----------
+#Inicie um console na aplicacao
+#-----------
+1)heroku run bash
+2)ls
