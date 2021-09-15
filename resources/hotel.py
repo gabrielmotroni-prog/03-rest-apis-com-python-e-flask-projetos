@@ -2,7 +2,19 @@
 from flask_restful import Resource, reqparse
 from models.hotel import HotelModel
 from flask_jwt_extended import jwt_required # ele vai auxiliar que somente usuario logado acesse certos recursos/operacoes
+import sqlite3 # vamos usar para consultas mais robustas
 
+#parametros do path, que ficam na url
+#nosso construtorpara o path_params - parametros da path
+path_params = reqparse.RequestParser()
+#add argumentos
+path_params.add_argument('cidade', type=str)
+path_params.add_argument('estrelas_min', type = float)
+path_params.add_argument('estrelas_max',type=float)
+path_params.add_argument('diaria_min',type=float)
+path_params.add_argument('diaria_max',type=float)
+path_params.add_argument('limit',type=float) #qtd de itens q queremos exixibor por pagina
+path_params.add_argument('offset',type=float) #qtd de elemento q queremos pular
 
 #classe herdando os metodos de Resource
 # recurso hoteis tem dentro metodo get
@@ -12,12 +24,19 @@ class Hoteis(Resource):
         #lembre o json: {chave:valor}
         #nos retornamos esse dicionario mas resource converte automaticamente em em json
         #isso seria um SELECT * FROM hoteis
+        dados = path_params.parse_args()
+        {limit}
+        dados_validos = 
         hoteis_retornados = HotelModel.query.all()
         return {'hoteis': [hoteis.json() for hoteis in hoteis_retornados] }, #200  #list comprehesion
 
 #recurso hotel com metodos CRUD
 #esse recurso eh sobre UM hotel
 class Hotel(Resource):
+
+    # se a pessoa nao passa UM dos argumentos em path_retornados, ele retorna tudo null
+
+
     #post : precisamos receber todos os dados via json pois post eh um insercao
     #para no nosso codigo coneguir receber os dados para fzr o post(criacao) nosx
     #usamos bibilioca reqparte: ele vai receber todos os elementos da requisicao
