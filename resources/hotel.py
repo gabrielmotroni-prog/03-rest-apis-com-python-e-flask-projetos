@@ -1,9 +1,45 @@
 #tudo que for sobre recursos de hotel eu colono nesse arquivo
+from sqlite3.dbapi2 import connect
 from flask_restful import Resource, reqparse
 from models.hotel import HotelModel
 from flask_jwt_extended import jwt_required # ele vai auxiliar que somente usuario logado acesse certos recursos/operacoes
 import sqlite3 # vamos usar para consultas mais robustas
 
+#normaliza a falta de parametros passados pelo usuario (ou com cidade ou sem cidade);
+#os valores default sao os parametros para entrar em acao
+#caso dados nao sejam passados
+def normalize_path_params(cidade=None,
+                         estrelas_min=0,
+                         estrelas_max=5,
+                         diaria_min=0,
+                         diaria_max=10000,
+                         limit=50,
+                         offiset=0, **dados):
+    
+    #normaliza duas situacoes:
+    # se o usuario passou cidade
+    if cidade:
+        return{
+            'estrelas_min': estrelas_min,
+            'estrelas_max': estrelas_max,
+            'diaria_min':diaria_min,
+            'diaria_max':diaria_max,
+            'cidade':cidade,
+            'limit':limit,
+            'offset':offiset
+        }
+    return{ #se o usuario NAO passou cidade
+        'estrelas_min': estrelas_min,
+        'estrelas_max': estrelas_max,
+        'diaria_min':diaria_min,
+        'diaria_max':diaria_max,
+        'cidade':cidade,
+        'limit':limit,
+        'offset':offiset
+    }
+
+
+# path /hoteis?cidade=Rio de Janeiro&estrelas_min=4&diaria_max=400
 #parametros do path, que ficam na url
 #nosso construtorpara o path_params - parametros da path
 path_params = reqparse.RequestParser()
@@ -22,11 +58,34 @@ path_params.add_argument('offset',type=float) #qtd de elemento q queremos pular
 class Hoteis(Resource):
     def get(self):
         #lembre o json: {chave:valor}
-        #nos retornamos esse dicionario mas resource converte automaticamente em em json
-        #isso seria um SELECT * FROM hoteis
+
+        #abrindo conexao com banco
+        #usando forma sql, pois sqlalchemy nao da conta dos muitos parametros que passaremos
+        connection = sqlite3.connect('banco.db')
+        cursor = connection.cursor()
+
+    
+        #pegando  os dados passados ao path (url) e colocando no objeto
         dados = path_params.parse_args()
-        {limit}
-        dados_validos = 
+        dados = {'limit':50, 'diaria_min': None}
+
+        #pegando somente os dados validos ( que nao tenham nulo, pois com nulo n da pra filtrar)
+        #usando compreensao de lista
+        #explicando o compressando de lista usada:
+        #1-dados validados receba o valor de cada  -> chave:dados[chave]
+        #2-para cada chave em dados
+        #3- se o valor nao for nulo
+        dados_validos = {chave:dados[chave] for chave in dados if dados[chave] is not None }
+
+        #usando o a funcao normalize dados para tratar parametros de filtro: com cidade ou sem cidade
+        parametros = normalize_path_params(**dados_validos)
+
+        #.get('') eh a forma melhorada de parametros['cidade'] -> alternativa para pegar os dados do parametro para  codigo n quebrar com nulo
+        if parametros.get('cidade'):
+            consulta = "SELECT * FROM "
+
+        #nos retornamos esse dicionario mas resource converte automaticamente em em json
+        #isso seria um SELECT * FROM hotei
         hoteis_retornados = HotelModel.query.all()
         return {'hoteis': [hoteis.json() for hoteis in hoteis_retornados] }, #200  #list comprehesion
 

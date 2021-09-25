@@ -1,4 +1,5 @@
 #usamos esse arquivo so para aprender criar uma conexao na mao criando banco de dados sqlite3
+#na primeirsa sessao do curso
 
 import sqlite3 # nao eh necessario pip install pois ja esta dentro doo python
 
