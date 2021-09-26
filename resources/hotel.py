@@ -14,7 +14,7 @@ def normalize_path_params(cidade=None,
                          diaria_min=0,
                          diaria_max=10000,
                          limit=50,
-                         offiset=0, **dados):
+                         offset=0, **dados):
     
     #normaliza duas situacoes:
     # se o usuario passou cidade
@@ -26,16 +26,15 @@ def normalize_path_params(cidade=None,
             'diaria_max':diaria_max,
             'cidade':cidade,
             'limit':limit,
-            'offset':offiset
+            'offset':offset
         }
     return{ #se o usuario NAO passou cidade
         'estrelas_min': estrelas_min,
         'estrelas_max': estrelas_max,
         'diaria_min':diaria_min,
         'diaria_max':diaria_max,
-        'cidade':cidade,
         'limit':limit,
-        'offset':offiset
+        'offset':offset
     }
 
 
@@ -63,11 +62,9 @@ class Hoteis(Resource):
         #usando forma sql, pois sqlalchemy nao da conta dos muitos parametros que passaremos
         connection = sqlite3.connect('banco.db')
         cursor = connection.cursor()
-
     
-        #pegando  os dados passados ao path (url) e colocando no objeto
+        #pegando  os dados passados ao path (url) e colocando no objeto dados
         dados = path_params.parse_args()
-        dados = {'limit':50, 'diaria_min': None}
 
         #pegando somente os dados validos ( que nao tenham nulo, pois com nulo n da pra filtrar)
         #usando compreensao de lista
@@ -76,18 +73,48 @@ class Hoteis(Resource):
         #2-para cada chave em dados
         #3- se o valor nao for nulo
         dados_validos = {chave:dados[chave] for chave in dados if dados[chave] is not None }
-
-        #usando o a funcao normalize dados para tratar parametros de filtro: com cidade ou sem cidade
+        print(dados)
+        #parametros usando o a funcao normalize dados para tratar parametros de filtro: com cidade ou sem cidade
         parametros = normalize_path_params(**dados_validos)
 
+        # trata filtro SEM cidade
         #.get('') eh a forma melhorada de parametros['cidade'] -> alternativa para pegar os dados do parametro para  codigo n quebrar com nulo
-        if parametros.get('cidade'):
-            consulta = "SELECT * FROM "
+        if not parametros.get('cidade'):
+            consulta = "SELECT * FROM hoteis \
+            WHERE (estrelas >= ? and estrelas <= ? ) \
+            and (diaria >= ? and diaria <= ?) \
+            LIMIT ? OFFSET ?"
+            #queremos usar so os valores que serao convertidos em tuplas para serem usados com cursor
+            tupla = tuple([parametros[chave] for chave in parametros])
+            #consulta feita pelo sql + tupla
+            
+            resultado = cursor.execute(consulta, tupla)
+        else: # trata filtro COM cidade (os parametros precisam estar na msm ordem do metodo normalize)
+            consulta = "SELECT * FROM hoteis \
+            WHERE (estrelas >= ? and estrelas <= ? ) \
+            and (diaria >= ? and diaria <= ?) \
+            and cidade = ? LIMIT ? OFFSET ?"
+            #queremos usar so os valores que serao convertidos em tuplas para serem usados com cursor
+            tupla = tuple([parametros[chave] for chave in parametros])
+            #consulta feita pelo: sql + tupla
+            resultado = cursor.execute(consulta, tupla)
 
-        #nos retornamos esse dicionario mas resource converte automaticamente em em json
-        #isso seria um SELECT * FROM hotei
-        hoteis_retornados = HotelModel.query.all()
-        return {'hoteis': [hoteis.json() for hoteis in hoteis_retornados] }, #200  #list comprehesion
+        hoteis = []
+        for linha in resultado:
+            #com for, acesso as colunas da linha de registro retorna;
+            #monto um objeto a cada volta do for e faco append em hoteis
+            #cuidado! siga a ordem do contrutoor da classe
+            hoteis.append(
+                {
+                'hotel_id': linha[0],
+                'nome': linha[1],
+                'estrelas': linha[2],
+                'diaria': linha[3],
+                'cidade': linha[4]
+                }
+            )
+        #o restAPi retorna o dicionario automaticamente em json
+        return {'hoteis': hoteis }, #200  
 
 #recurso hotel com metodos CRUD
 #esse recurso eh sobre UM hotel

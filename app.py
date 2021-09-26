@@ -75,6 +75,6 @@ if __name__ == '__main__':
     
     port = int(os.environ.get("PORT", 5000))
     #app.run(debug=True, host='0.0.0.0')
-    app.run(threaded=True, host='0.0.0.0', port=port) #threaded - muitas sessoes ao mesmo tempo
+    app.run(debug=True, threaded=True, host='0.0.0.0', port=port) #threaded - muitas sessoes ao mesmo tempo
 
 #post : precisamos receber todos os dados via json
